@@ -1,0 +1,46 @@
+parameters:
+    admin_email: manager@example.com
+
+services:
+#    test.example:
+#        class: TestBundle\Example
+#        arguments: ["@service_id", "plain_value", "%parameter%"]
+      
+      _defaults:
+            autowire: true
+            autoconfigure: true
+            public: false
+
+      # TestBundle\MessageManager\Service\MessageGenerator:
+      #       # redundant thanks to _defaults, but value is overridable on each service
+      #       # autowire: true
+      #       # not required, will help in our example
+            
+      #       # call the static method
+      #       factory: ['TestBundle\MessageManager\Factory\MessageFactory', createMessage]
+      #       public: true
+      #       arguments:
+      #             $adminEmail: '%admin_email%'
+      
+      # test.message_factory:
+      #       class: TestBundle\MessageManager\Factory\MessageFactory
+      #       arguments: ['TestBundle\MessageManager\Service\MessageGenerator']
+
+      # test.message:
+      #       class: TestBundle\MessageManager\Service\MessageGenerator
+      #       factory: ['@test.message_factory', createMessage]
+      #       tags:
+      #             - { name: test.message }
+
+
+      TestBundle\MessageManager\Service\MessageGenerator:
+            # redundant thanks to _defaults, but value is overridable on each service
+            autowire: true
+            # not required, will help in our example
+            
+            # call the static method
+            # factory: ['TestBundle\MessageManager\Factory\MessageFactory', createMessage]
+            public: true
+            arguments:
+                  $adminEmail: '%admin_email%'
+                  $doctrine: '@doctrine.orm.entity_manager'
