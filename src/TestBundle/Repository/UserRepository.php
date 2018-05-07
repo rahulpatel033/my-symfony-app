@@ -1,7 +1,7 @@
 <?php
 
 namespace TestBundle\Repository;
-
+use Doctrine\ORM\Query\Expr;
 /**
  * UserRepository
  *
@@ -10,4 +10,120 @@ namespace TestBundle\Repository;
  */
 class UserRepository extends \Doctrine\ORM\EntityRepository
 {
+
+    /**
+     * @param array $get
+     * @param bool $flag
+     * @return array|\Doctrine\ORM\Query
+     */
+    public function ajaxTable(array $get, $flag = false){
+        
+        /* Indexed column (used for fast and accurate table cardinality) */
+        $alias = 'a';
+        
+        /* DB table to use */
+        $tableObjectName = 'TestBundle:User';
+        
+        /**
+         * Set to default
+         */
+        if(!isset($get['columns_names']) || empty($get['columns_names']))
+        $get['columns_names'] = array('id');
+        $aColumns = array();
+        foreach($get['columns_names'] as $value) $aColumns[] = $alias .'.'. $value;
+        $cb = $this->getEntityManager()
+        ->getRepository($tableObjectName)
+        ->createQueryBuilder($alias)
+        ->select(str_replace(" , ", " ", implode(", ", $aColumns)));
+        if ( isset( $get['start'] ) && $get['length'] != '-1' ){
+        $cb->setFirstResult( (int)$get['start'] )
+            ->setMaxResults( (int)$get['length'] );
+        }
+
+        /*
+        * Ordering
+        */
+        if ( isset( $get['order'] ) ){
+            foreach($get['order'] as $key=>$order) {
+                $cb->orderBy($aColumns[$order['column']], $order['dir']);
+            }
+        }
+
+        /*
+        * Filtering
+        * NOTE this does not match the built-in DataTables filtering which does it
+        * word by word on any field. It's possible to do here, but concerned about efficiency
+        * on very large tables, and MySQL's regex functionality is very limited
+        */
+        if ( isset($get['search']) && $get['search'] != '' ){
+            $aLike = array();
+            for ( $i=0 ; $i<count($aColumns) ; $i++ ){
+                if ( isset($get['columns'][$i]['searchable']) && $get['columns'][$i]['searchable'] == "true" ){
+                $aLike[] = $cb->expr()->like($aColumns[$i], '\'%'. $get['search']['value'] .'%\'');
+                }
+            }
+            
+            if(count($aLike) > 0) $cb->andWhere(new Expr\Orx($aLike));
+            else unset($aLike);
+        }
+        /*
+        * SQL queries
+        * Get data to display
+        */
+        $query = $cb->getQuery();
+
+        if($flag)
+            return $query;
+        else
+            return $query->getResult();
+    }
+
+    /**
+     * @return int
+     */
+    public function getCount(){
+        $aResultTotal = $this->getEntityManager()
+        ->createQuery('SELECT COUNT(a) FROM TestBundle:User a')
+        ->setMaxResults(1)
+        ->getResult();
+        return $aResultTotal[0][1];
+    }
+
+    public function getFilteredCount(array $get)
+    {
+        // print_r($get);die;
+        $alias = 'a';
+        /* DB table to use */
+        $tableObjectName = 'TestBundle:User';
+    
+        $cb = $this->getEntityManager()
+        ->getRepository($tableObjectName)
+        ->createQueryBuilder($alias)
+        ->select("count(a.id)");
+    
+        /*
+        * Filtering
+        * NOTE this does not match the built-in DataTables filtering which does it
+        * word by word on any field. It's possible to do here, but concerned about efficiency
+        * on very large tables, and MySQL's regex functionality is very limited
+        */
+        if ( isset($get['sSearch']) && $get['sSearch'] != '' ){
+            $aLike = array();
+            for ( $i=0 ; $i<count($aColumns) ; $i++ ){
+                if ( isset($get['bSearchable_'.$i]) && $get['bSearchable_'.$i] == "true" ){
+                    $aLike[] = $cb->expr()->like($aColumns[$i], '\'%'. $get['sSearch'] .'%\'');
+                }
+            }
+            if(count($aLike) > 0) $cb->andWhere(new Expr\Orx($aLike));
+            else unset($aLike);
+        }
+        
+        /*
+        * SQL queries
+        * Get data to display
+        */
+        $query = $cb->getQuery();
+        $aResultTotal = $query->getResult();
+        return $aResultTotal[0][1];
+    }
 }

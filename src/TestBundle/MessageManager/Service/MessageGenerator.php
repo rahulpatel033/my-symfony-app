@@ -24,13 +24,13 @@ class MessageGenerator
 
         // $entityManager = $this->doctrine->getManager();
 
-        $product = new User();
-        $product->setName('Keyboard');
-        $product->setDescription('Ergonomic and stylish!');
+        // $product = new User();
+        // $product->setName('Keyboard');
+        // $product->setDescription('Ergonomic and stylish!');
 
-        $this->doctrine->persist($product);
+        // $this->doctrine->persist($product);
         
-        $this->doctrine->flush();
+        // $this->doctrine->flush();
         
         $messages = [
             'You did it! You updated the system! Amazing!',
